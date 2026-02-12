@@ -36,4 +36,12 @@ interface TimerSessionDao {
      */
     @Query("UPDATE timer_sessions SET memo = :memo WHERE id = :id")
     suspend fun updateMemo(id: Long, memo: String)
+
+    /**
+     * 특정 세션을 삭제합니다.
+     *
+     * @param id 삭제할 세션 ID
+     */
+    @Query("DELETE FROM timer_sessions WHERE id = :id")
+    suspend fun deleteSession(id: Long)
 }

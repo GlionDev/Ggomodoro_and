@@ -1,18 +1,34 @@
 package com.ggomodoro.app
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -41,6 +57,11 @@ class MainActivity : ComponentActivity() {
                 GgomodoroAppContent()
             }
         }
+
+        val array = IntArray(5) { 1 }
+        array.map { it ->
+
+        }
     }
 }
 
@@ -51,6 +72,56 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun GgomodoroAppContent() {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    var showPermissionDialog by remember { mutableStateOf(false) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            if (!isGranted) {
+                showPermissionDialog = true
+            }
+        }
+    )
+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val hasPermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!hasPermission) {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
+    if (showPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showPermissionDialog = false },
+            title = { Text(text = "권한 요청") },
+            text = { Text(text = "남은시간 알림을 위해 \"알림 권한\" 허용이 필요합니다.\n확인을 누르시면 설정으로 이동합니다.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showPermissionDialog = false
+                        val intent = Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                        ).apply {
+                            data = Uri.fromParts("package", context.packageName, null)
+                        }
+                        context.startActivity(intent)
+                    }
+                ) { Text("확인") }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showPermissionDialog = false }
+                ) { Text("취소") }
+            }
+        )
+    }
     
     Scaffold(
         bottomBar = {

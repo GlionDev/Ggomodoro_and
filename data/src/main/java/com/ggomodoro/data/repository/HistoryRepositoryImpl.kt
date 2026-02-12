@@ -32,4 +32,8 @@ class HistoryRepositoryImpl @Inject constructor(
     override suspend fun updateMemo(id: Long, memo: String) {
         dao.updateMemo(id, memo)
     }
+
+    override suspend fun deleteSession(id: Long) {
+        dao.deleteSession(id)
+    }
 }

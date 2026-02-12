@@ -114,13 +114,13 @@ class TimerService : Service() {
     }
 
     private fun updateNotification(remainingSeconds: Int) {
-        val minutes = remainingSeconds / 60
-        val seconds = remainingSeconds % 60
-        val timeString = String.format("%02d:%02d", minutes, seconds)
+        val currentState = _timerState.value
+        val totalSeconds = if (currentState is TimerState.Running) currentState.totalSeconds else remainingSeconds
+        val progress = totalSeconds - remainingSeconds
 
         val notification = notificationHelper.getOngoingTimerNotificationBuilder()
             .setContentTitle("Ggomodoro Timer")
-            .setContentText("Remaining: $timeString")
+            .setProgress(totalSeconds, progress, false)
             .build()
 
         val manager = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager

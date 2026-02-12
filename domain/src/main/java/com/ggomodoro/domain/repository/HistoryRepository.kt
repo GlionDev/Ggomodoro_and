@@ -28,4 +28,11 @@ interface HistoryRepository {
      * @param memo 수정할 메모 내용
      */
     suspend fun updateMemo(id: Long, memo: String)
+
+    /**
+     * 특정 타이머 세션을 삭제합니다.
+     *
+     * @param id 삭제할 세션의 ID
+     */
+    suspend fun deleteSession(id: Long)
 }

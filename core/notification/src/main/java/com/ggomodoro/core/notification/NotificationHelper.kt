@@ -60,11 +60,20 @@ class NotificationHelper @Inject constructor(
      * @return [NotificationCompat.Builder] 객체
      */
     fun getOngoingTimerNotificationBuilder(): NotificationCompat.Builder {
+        val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+        val pendingIntent = android.app.PendingIntent.getActivity(
+            context,
+            0,
+            launchIntent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
         return NotificationCompat.Builder(context, TIMER_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info) // Placeholder
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setContentIntent(pendingIntent)
     }
 
     /**

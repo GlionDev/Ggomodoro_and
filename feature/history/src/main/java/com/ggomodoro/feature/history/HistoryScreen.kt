@@ -1,7 +1,9 @@
 package com.ggomodoro.feature.history
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,14 +15,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -29,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -52,7 +61,8 @@ fun HistoryRoute(
     val history by viewModel.historyState.collectAsState()
     HistoryScreen(
         history = history,
-        onUpdateMemo = viewModel::updateMemo
+        onUpdateMemo = viewModel::updateMemo,
+        onDeleteSession = viewModel::deleteSession
     )
 }
 
@@ -62,12 +72,17 @@ fun HistoryRoute(
  *
  * @param history 표시할 타이머 세션 리스트
  * @param onUpdateMemo 메모 업데이트 콜백
+ * @param onDeleteSession 세션 삭제 콜백
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
     history: List<TimerSession>,
-    onUpdateMemo: (TimerSession, String) -> Unit
+    onUpdateMemo: (TimerSession, String) -> Unit,
+    onDeleteSession: (TimerSession) -> Unit
 ) {
+    var sessionToDelete by remember { mutableStateOf<TimerSession?>(null) }
+
     if (history.isEmpty()) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -86,10 +101,73 @@ fun HistoryScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(history) { session ->
-                HistoryItem(session = session, onUpdateMemo = onUpdateMemo)
+            items(
+                items = history,
+                key = { it.id }
+            ) { session ->
+                val dismissState = rememberSwipeToDismissBoxState(
+                    confirmValueChange = {
+                        if (it == SwipeToDismissBoxValue.StartToEnd) {
+                            sessionToDelete = session
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                )
+
+                SwipeToDismissBox(
+                    state = dismissState,
+                    backgroundContent = {
+                        val color = if (dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd) {
+                            MaterialTheme.colorScheme.errorContainer
+                        } else {
+                            Color.Transparent
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(color)
+                                .padding(horizontal = 20.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete",
+                                tint = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    },
+                    content = {
+                        HistoryItem(session = session, onUpdateMemo = onUpdateMemo)
+                    }
+                )
             }
         }
+    }
+
+    if (sessionToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { sessionToDelete = null },
+            title = { Text("Delete Session") },
+            text = { Text("정말로 삭제하시겠습니까?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        sessionToDelete?.let { onDeleteSession(it) }
+                        sessionToDelete = null
+                    }
+                ) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { sessionToDelete = null }) {
+                    Text("No")
+                }
+            }
+        )
     }
 }
 
@@ -140,14 +218,8 @@ fun HistoryItem(
                     )
                 }
                 
-                // Status Icon or Text
-                if (session.status == SessionStatus.SUCCESS) {
-                     Icon(
-                         painter = painterResource(android.R.drawable.star_on), // Placeholder star
-                         contentDescription = "Success",
-                         tint = MaterialTheme.colorScheme.primary
-                     )
-                } else {
+                // Status Text only (Bookmark Removed)
+                if (session.status != SessionStatus.SUCCESS) {
                     Text(
                         text = "FAILED",
                         color = MaterialTheme.colorScheme.error,
@@ -208,6 +280,7 @@ fun MemoEditDialog(
     onConfirm: (String) -> Unit
 ) {
     var text by remember { mutableStateOf(currentMemo) }
+    val isError = text.length > 30
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -215,15 +288,24 @@ fun MemoEditDialog(
         text = {
             OutlinedTextField(
                 value = text,
-                onValueChange = { if (it.length <= 100) text = it },
-                label = { Text("Memo (max 100 chars)") },
+                onValueChange = { text = it }, // Allow typing more to show error
+                label = { Text("Memo (max 30 chars)") },
                 singleLine = false,
                 maxLines = 3,
-                supportingText = { Text("${text.length}/100") }
+                supportingText = { 
+                    Text(
+                        text = "${text.length}/30",
+                        color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                    ) 
+                },
+                isError = isError
             )
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(text) }) {
+            TextButton(
+                onClick = { onConfirm(text) },
+                enabled = !isError
+            ) {
                 Text("Save")
             }
         },
