@@ -1,5 +1,27 @@
 # Work Log
 
+## 2026-02-19
+- **[Feature] 타이머 진동 효과 구현 및 디자인 변경, 코드 정리**
+    - 타이머 다이얼 조정 시 분 단위 변경마다 진동 피드백(`VibrationEffect.EFFECT_TICK`) 추가.
+    - AndroidManifest.xml에 `VIBRATE` 권한 추가.
+    - **[Design] Toy-like Aesthetic Redesign**
+        - 꼬꼬(닭) 의 색상과 맞춘 color theme 적용
+        - **Timer UI**: 두꺼운(50dp) 트랙, 둥근 캡(Round Cap), 큰 원형 손잡이(Knob) 추가.
+        - **Controls**: 텍스트 버튼을 둥근(RoundedCornerShape 50) '청키'한 스타일로 변경.
+    - **[Refactor] Dependency Management**:
+        - `:core:designsystem` 모듈의 Compose UI 라이브러리(`ui`, `material3` 등) 의존성을 `api`로 변경하여 피쳐 모듈에 일관되게 노출.
+        - `:feature:timer` 모듈의 불필요한 명시적 `foundation` 의존성 제거.
+    - **[Fix] Build Stability**:
+        - Gradle Heap Size를 4GB로 증설(`org.gradle.jvmargs=-Xmx4g`)하여 Dex Merging 단계의 `OutOfMemoryError` 해결.
+    - **[Fix]** Galaxy A31 (Android 12) 등 일부 기기 호환성 문제 해결: `EFFECT_TICK` 대신 `createOneShot(30ms)` 및 `USAGE_TOUCH` 속성 사용.
+    - **[Fix]** `NoSuchMethodError` 해결: `vibrate(VibrationEffect, VibrationAttributes)`는 API 33 이상에서만 호출하도록 조건 분기 수정.
+    - **[Refactor]** `VIBRATE` 권한을 `:app` 모듈에서 `:feature:timer` 모듈로 이동.
+    - Android 12 이상(VibratorManager) 및 레거시 디바이스(Vibrator) 호환성 처리.
+    - **[Refactor] Import 정리**
+    - `android.os`, `androidx.compose` 등 Fully Qualified Name을 `import` 문으로 교체.
+    - 대상: `TimerScreen.kt`, `MainActivity.kt`, `NotificationHelper.kt`, `Theme.kt`, `TimerService.kt`.
+    - 빌드 및 기능 검증 완료.
+
 ## 2026-02-12
 - **[Refactor] Global Rule 적용 및 프로젝트 구조 개선**
     - `build-logic`의 `KotlinAndroid.kt`에서 `compileSdk`를 36으로 다시 변경 (중복된 Hilt App 클래스 제거 후 정상 빌드 확인).

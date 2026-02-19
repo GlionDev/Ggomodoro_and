@@ -91,7 +91,8 @@ fun HistoryScreen(
         ) {
             Text(
                 text = "No history yet.",
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     } else {
@@ -150,8 +151,8 @@ fun HistoryScreen(
     if (sessionToDelete != null) {
         AlertDialog(
             onDismissRequest = { sessionToDelete = null },
-            title = { Text("Delete Session") },
-            text = { Text("정말로 삭제하시겠습니까?") },
+            title = { Text("기록 삭제", fontWeight = FontWeight.Bold) },
+            text = { Text("정말로 삭제하시겠습니까?", style = MaterialTheme.typography.bodyLarge) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -159,14 +160,17 @@ fun HistoryScreen(
                         sessionToDelete = null
                     }
                 ) {
-                    Text("Yes")
+                    Text("삭제", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { sessionToDelete = null }) {
-                    Text("No")
+                    Text("취소", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
                 }
-            }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -185,13 +189,16 @@ fun HistoryItem(
 ) {
     var showMemoDialog by remember { mutableStateOf(false) }
 
+    val cs = MaterialTheme.colorScheme
+    val isSuccess = session.status == SessionStatus.SUCCESS
+
+    val containerColor = if (isSuccess) cs.primaryContainer else cs.errorContainer
+    val onContainerColor = if (isSuccess) cs.onPrimaryContainer else cs.onErrorContainer
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (session.status == SessionStatus.SUCCESS) 
-                MaterialTheme.colorScheme.surface 
-            else 
-                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
+            containerColor = containerColor
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -208,22 +215,25 @@ fun HistoryItem(
                 Column {
                     Text(
                         text = formatDate(session.startTimeEpochMillis),
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.labelMedium,
+                        color = onContainerColor.copy(alpha = 0.75f)
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "${session.plannedDurationMinutes} min",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = onContainerColor
                     )
                 }
                 
                 // Status Text only (Bookmark Removed)
-                if (session.status != SessionStatus.SUCCESS) {
+                if (!isSuccess) {
                     Text(
                         text = "FAILED",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.labelSmall
+                        color = onContainerColor,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
@@ -242,13 +252,17 @@ fun HistoryItem(
                     painter = painterResource(android.R.drawable.ic_menu_edit), // Placeholder edit
                     contentDescription = "Edit Memo",
                     modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = onContainerColor.copy(alpha = 0.8f)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
+                val memoText = session.memo.takeIf { !it.isNullOrBlank() } ?: "메모를 추가하세요..."
                 Text(
-                    text = session.memo.takeIf { !it.isNullOrBlank() } ?: "Add a memo...",
+                    text = memoText,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (session.memo.isNullOrBlank()) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
+                    color = if (session.memo.isNullOrBlank())
+                        onContainerColor.copy(alpha = 0.6f)
+                    else
+                        onContainerColor
                 )
             }
         }
@@ -281,21 +295,22 @@ fun MemoEditDialog(
 ) {
     var text by remember { mutableStateOf(currentMemo) }
     val isError = text.length > 30
+    val cs = MaterialTheme.colorScheme
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit Memo") },
+        title = { Text("메모") },
         text = {
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it }, // Allow typing more to show error
-                label = { Text("Memo (max 30 chars)") },
+                label = { Text("메모는 최대 30자 입니다.") },
                 singleLine = false,
                 maxLines = 3,
                 supportingText = { 
                     Text(
                         text = "${text.length}/30",
-                        color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (isError) cs.error else cs.onSurfaceVariant
                     ) 
                 },
                 isError = isError
@@ -306,14 +321,17 @@ fun MemoEditDialog(
                 onClick = { onConfirm(text) },
                 enabled = !isError
             ) {
-                Text("Save")
+                Text("저장", fontWeight = FontWeight.Bold, color = cs.primary)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("취소", fontWeight = FontWeight.Bold, color = cs.onSurface)
             }
-        }
+        },
+        containerColor = cs.surface,
+        titleContentColor = cs.onSurface,
+        textContentColor = cs.onSurfaceVariant
     )
 }
 

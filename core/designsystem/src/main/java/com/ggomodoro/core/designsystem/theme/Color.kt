@@ -2,32 +2,41 @@ package com.ggomodoro.core.designsystem.theme
 
 import androidx.compose.ui.graphics.Color
 
-val PastelRed = Color(0xFFFFB3B3)
-val PastelRedDark = Color(0xFFE57373)
-val PastelYellow = Color(0xFFFFF9C4)
-val PastelYellowDark = Color(0xFFFFF176)
-val White = Color(0xFFFFFFFF)
-val Black = Color(0xFF000000)
-val Gray900 = Color(0xFF212121)
-val Gray100 = Color(0xFFF5F5F5)
+val ToyYellow = Color(0xFFFFC83D)
+val ToyYellowDark = Color(0xFFFFC83D)
 
-// Light Theme Colors
-val LightPrimary = PastelRed
-val LightOnPrimary = Black
-val LightSecondary = PastelYellow
-val LightOnSecondary = Black
-val LightBackground = White
-val LightOnBackground = Black
-val LightSurface = Gray100
-val LightOnSurface = Black
+val ToyRed = Color(0xFFE53935)
+val ToyRedDark = Color(0xFFE53935)
 
-// Dark Theme Colors (Pastel themes can look good in dark mode too, maybe inverted or muted)
-// For now, let's keep it simple, maybe a dark red/yellow?
-val DarkPrimary = PastelRedDark
-val DarkOnPrimary = White
-val DarkSecondary = PastelYellowDark
-val DarkOnSecondary = Black
-val DarkBackground = Gray900
-val DarkOnBackground = White
-val DarkSurface = Color(0xFF303030)
-val DarkOnSurface = White
+val ToyBlack = Color(0xFF2D2D2D)
+val ToyWhite = Color(0xFFFFFFFF)
+
+// Light neutrals (warm paper / cream)
+val ToyBgLight = Color(0xFFFFF7EF)          // background (paper)
+val ToySurfaceLight = Color(0xFFFFF1D6)     // surface (cream)
+val ToySurfaceVarLight = Color(0xFFF3E6C6)  // surfaceVariant (deeper cream)
+val ToyOutlineLight = Color(0xFF7A6F5A)     // outline (warm gray-brown)
+
+// Dark neutrals (warm charcoal)
+val ToyBgDark = Color(0xFF141210)           // background (warm black)
+val ToySurfaceDark = Color(0xFF1C1913)      // surface
+val ToySurfaceVarDark = Color(0xFF2A251C)   // surfaceVariant
+val ToyOutlineDark = Color(0xFFBEB4A2)      // outline (warm light gray)
+
+// Containers (to support Material components like FilledTonalButton, chips, etc.)
+val ToyYellowContainerLight = Color(0xFFFFE6A6)
+val ToyYellowContainerDark = Color(0xFF5C4500)
+
+val ToyRedContainerLight = Color(0xFFFFDAD6)
+val ToyRedContainerDark = Color(0xFF7A1B18)
+
+// Error (Material3 expects separate roles; we align it with brand red but still give containers)
+val ToyError = ToyRed
+val ToyErrorContainerLight = Color(0xFFFFDAD6)
+val ToyErrorContainerDark = Color(0xFF7A1B18)
+
+// Inverse (for bottom sheets / inverse surfaces)
+val ToyInverseSurfaceLight = Color(0xFF1A1816)
+val ToyInverseSurfaceDark = Color(0xFFFFF2E6)
+val ToyInverseOnSurfaceLight = Color(0xFFFFF2E6)
+val ToyInverseOnSurfaceDark = Color(0xFF1A1816)

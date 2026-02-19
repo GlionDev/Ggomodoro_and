@@ -1,26 +1,42 @@
 package com.ggomodoro.feature.timer
 
+import android.app.Activity
+import android.content.Context
+import android.os.Build
+import android.os.VibrationAttributes
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
+import android.view.WindowManager
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -32,8 +48,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ggomodoro.feature.timer.service.TimerState
 import kotlin.math.atan2
@@ -41,6 +59,7 @@ import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
+
 
 /**
  * 타이머 화면의 루트 Composable입니다.
@@ -109,13 +128,31 @@ fun TimerScreen(
 fun CircularTimerSelector(
     onStartTimer: (Int) -> Unit
 ) {
+    val context = LocalContext.current
+    val vibrator = remember(context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vibratorManager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+    }
+
     var angle by remember { mutableFloatStateOf(0f) }
-    var durationMinutes by remember { mutableStateOf(0) }
+    var durationMinutes by remember { mutableIntStateOf(0) }
     var isDragging by remember { mutableStateOf(false) }
 
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val trackColor = MaterialTheme.colorScheme.surfaceVariant
-    val indicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val cs = MaterialTheme.colorScheme
+
+    val trackColor = cs.primary                  // Yellow
+    val filledColor = cs.secondary               // Red
+    val knobColor = cs.surface                   // ✅ was onSecondary
+    val knobShadow = Color.Black.copy(alpha = 0.12f)
+    val textColor = cs.onBackground
+
+    val hintColor = cs.onSurfaceVariant.copy(alpha = 0.55f) // ✅ was primary.copy(alpha=0.5f)
+
 
     var previousAngle by remember { mutableFloatStateOf(0f) }
 
@@ -125,27 +162,28 @@ fun CircularTimerSelector(
     ) {
         // Hint Area
         Box(
-            modifier = Modifier.height(40.dp), // Reserved height
+            modifier = Modifier.height(60.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
             if (!isDragging) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "Swipe Start!",
+                        text = "SWIPE TO SET",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        fontWeight = FontWeight.Black,
+                        color = hintColor
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
                         contentDescription = "Start Here",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = hintColor
                     )
                 }
             }
         }
         
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         Box(
             contentAlignment = Alignment.Center,
@@ -155,18 +193,16 @@ fun CircularTimerSelector(
                     detectDragGestures(
                         onDragStart = { offset ->
                             val center = Offset(size.width / 2f, size.height / 2f)
-                            // Use the same radius logic as drawing
-                            val strokeWidthVal = 40.dp.toPx()
+                            val strokeWidthVal = 50.dp.toPx() // Thicker stroke
                             val radius = (minOf(size.width, size.height) - strokeWidthVal) / 2f
-                            
-                            val startTarget = Offset(center.x, center.y - radius) 
-                            
+
+                            val startTarget = Offset(center.x, center.y - radius)
+
                             val distance = sqrt(
                                 (offset.x - startTarget.x).pow(2) + (offset.y - startTarget.y).pow(2)
                             )
-                            
-                            // Hit test radius can be generous (e.g. 1.5x stroke width)
-                            if (distance < strokeWidthVal * 1.5f) {
+
+                            if (distance < strokeWidthVal * 2f) { // Generous hit area
                                 isDragging = true
                             }
                         },
@@ -187,48 +223,64 @@ fun CircularTimerSelector(
                         if (isDragging) {
                             val center = Offset(size.width / 2f, size.height / 2f)
                             val touchPoint = change.position
-                            
+
                             val degrees = Math.toDegrees(
                                 atan2(
                                     (touchPoint.y - center.y).toDouble(),
                                     (touchPoint.x - center.x).toDouble()
                                 )
                             ).toFloat() + 90f
-                            
-                            
+
+
                             val normalizeDegrees = if (degrees < 0) degrees + 360f else degrees
-                            
-                            // Blocking Logic:
-                            // If we jump from a small angle (near 0) to a large angle (near 360), it's a CCW wrap.
-                            // We block this.
-                            // Condition: previous was near start (0-90) AND current is near end (270-360).
+
                             if (previousAngle < 90f && normalizeDegrees > 270f) {
                                 return@detectDragGestures
                             }
-                            
+
                             previousAngle = normalizeDegrees
                             angle = normalizeDegrees
-                            
+
                             val minutes = ((angle / 360f) * 60).toInt()
-                            durationMinutes = maxOf(0, minutes)
+                            val newDuration = maxOf(0, minutes)
+
+                            if (newDuration != durationMinutes) {
+                                durationMinutes = newDuration
+                                // Haptic feedback (Tick)
+                                val vibrationEffect = VibrationEffect.createOneShot(
+                                    30L,
+                                    VibrationEffect.DEFAULT_AMPLITUDE
+                                )
+
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    val attributes = VibrationAttributes.Builder()
+                                        .setUsage(VibrationAttributes.USAGE_TOUCH)
+                                        .build()
+                                    vibrator.vibrate(vibrationEffect, attributes)
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    vibrator.vibrate(vibrationEffect)
+                                }
+                            }
                         }
                     }
                 }
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
-                val strokeWidth = 40.dp.toPx() // Reverted to 40dp
-                // Radius to fill box: (size - stroke) / 2
+                val strokeWidth = 50.dp.toPx() // Toy-like thickness
                 val radius = (minOf(size.width, size.height) - strokeWidth) / 2f
+                val center = Offset(size.width / 2, size.height / 2)
                 
+                // Track (Pastel Yellow)
                 drawCircle(
-                    color = trackColor.copy(alpha = 0.3f),
+                    color = trackColor,
                     radius = radius,
                     style = Stroke(width = strokeWidth)
                 )
 
                 if (isDragging && angle > 0) {
                     drawArc(
-                        color = primaryColor,
+                        color = filledColor,
                         startAngle = -90f,
                         sweepAngle = angle,
                         useCenter = false,
@@ -238,26 +290,50 @@ fun CircularTimerSelector(
                     )
                 }
                 
-                if (!isDragging) {
-                   val topCenter = Offset(size.width / 2, strokeWidth / 2) // Visual Top
-                   // Actually, with new radius calc, the stroke center is at `radius` distance from center.
-                   // Visual top edge is at `center.y - radius - stroke/2` = `center.y - (size-stroke)/2 - stroke/2` = `center.y - size/2 + stroke/2 - stroke/2` = `center.y - size/2`.
-                   // If size = height, then `center.y - height/2` = 0.
-                   // So visually it touches the top.
-                   
-                   drawCircle(
-                       color = primaryColor,
-                       radius = 10.dp.toPx(), // Indicator size
-                       center = Offset(size.width / 2, (size.height - radius * 2) / 2) 
-                   )
-                }
+                // Knob / Indicator
+                val knobAngleRadians = Math.toRadians((angle - 90).toDouble())
+                val knobX = center.x + radius * cos(knobAngleRadians).toFloat()
+                val knobY = center.y + radius * sin(knobAngleRadians).toFloat()
+                
+                // Shadow for Knob
+                drawCircle(
+                    color = knobShadow,
+                    radius = 20.dp.toPx(),
+                    center = Offset(knobX, knobY + 4.dp.toPx())
+                )
+                
+                // Knob Body
+                drawCircle(
+                    color = knobColor,
+                    radius = 18.dp.toPx(),
+                    center = Offset(knobX, knobY)
+                )
+
+                drawCircle(
+                    color = cs.outline.copy(alpha = 0.35f),
+                    radius = 18.dp.toPx(),
+                    center = Offset(knobX, knobY),
+                    style = Stroke(width = 2.dp.toPx())
+                )
             }
             
-            Text(
-                text = "${durationMinutes} min",
-                style = MaterialTheme.typography.displayLarge,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "${durationMinutes}",
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        fontSize = 80.sp,
+                        fontWeight = FontWeight.Black
+                    ),
+                    color = textColor
+                )
+                Text(
+                    text = "min",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = textColor.copy(alpha = 0.6f)
+                )
+            }
         }
     }
 }
@@ -274,28 +350,32 @@ fun CircularTimerProgress(
     state: TimerState.Running,
     onStopTimer: () -> Unit
 ) {
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+    val trackColor = MaterialTheme.colorScheme.primary // ToyYellow (Pastel Yellow)
+    val filledColor = MaterialTheme.colorScheme.secondary
+    val textColor = MaterialTheme.colorScheme.onBackground
     var showStopDialog by remember { mutableStateOf(false) }
 
     if (showStopDialog) {
-        androidx.compose.material3.AlertDialog(
+        AlertDialog(
             onDismissRequest = { showStopDialog = false },
-            title = { Text(text = "타이머 정지") },
-            text = { Text(text = "정말 그만하시겠습니까?") },
+            title = { Text(text = "타이머 정지", fontWeight = FontWeight.Bold) },
+            text = { Text(text = "정말 그만하시겠습니까?", style = MaterialTheme.typography.bodyLarge) },
             confirmButton = {
-                androidx.compose.material3.TextButton(
+                TextButton(
                     onClick = {
                         showStopDialog = false
                         onStopTimer()
                     }
-                ) { Text("예") }
+                ) { Text("예", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary) }
             },
             dismissButton = {
-                androidx.compose.material3.TextButton(
+                TextButton(
                     onClick = { showStopDialog = false }
-                ) { Text("아니요") }
-            }
+                ) { Text("아니요", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
     
@@ -304,13 +384,16 @@ fun CircularTimerProgress(
         modifier = Modifier
             .aspectRatio(1f)
     ) {
+        // Remaining Time (Minutes:Seconds)
+        val remainingDesc = "${state.remainingSeconds / 60}:${String.format("%02d", state.remainingSeconds % 60)}"
+        
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val strokeWidth = 40.dp.toPx() // Reverted to 40dp
+            val strokeWidth = 50.dp.toPx() // Toy thickness
             val radius = (minOf(size.width, size.height) - strokeWidth) / 2f
             
-            // Background Ring (Trace)
+            // Background Ring (Trace in Pastel Yellow)
             drawCircle(
-                color = trackColor.copy(alpha = 0.3f),
+                color = trackColor,
                 radius = radius,
                 style = Stroke(width = strokeWidth)
             )
@@ -320,7 +403,7 @@ fun CircularTimerProgress(
             val sweep = (state.remainingSeconds / maxSeconds) * 360f
             
             drawArc(
-                color = primaryColor,
+                color = filledColor,
                 startAngle = -90f,
                 sweepAngle = sweep,
                 useCenter = false,
@@ -330,21 +413,40 @@ fun CircularTimerProgress(
             )
         }
         
-        // Stop Button Centered (No Text)
-        Button(onClick = { showStopDialog = true }) {
-            Text("Stop")
+        // Stop Button (Chunky)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = { showStopDialog = true },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.background, // White button
+                    contentColor = MaterialTheme.colorScheme.secondary
+                ),
+                shape = RoundedCornerShape(50),
+                contentPadding = PaddingValues(horizontal = 32.dp, vertical = 12.dp),
+                modifier = Modifier
+                    .height(56.dp)
+                    .border(
+                        width = 2.dp,
+                        color = MaterialTheme.colorScheme.secondary, // red border
+                        shape = RoundedCornerShape(28.dp) // Match default dialog shape
+                    ),
+                // TODO: Add shadow if possible (requires custom modifier or libs)
+            ) {
+                Text("GIVE UP", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            }
         }
     }
 }
 
 @Composable
 fun KeepScreenOn() {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    androidx.compose.runtime.DisposableEffect(Unit) {
-        val window = (context as? android.app.Activity)?.window
-        window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    val context = LocalContext.current
+    DisposableEffect(Unit) {
+        val window = (context as? Activity)?.window
+        window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         onDispose {
-            window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
     }
 }

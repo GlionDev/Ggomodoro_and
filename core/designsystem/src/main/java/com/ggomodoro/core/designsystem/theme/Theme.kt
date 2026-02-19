@@ -10,33 +10,94 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    primary = DarkPrimary,
-    onPrimary = DarkOnPrimary,
-    secondary = DarkSecondary,
-    onSecondary = DarkOnSecondary,
-    background = DarkBackground,
-    onBackground = DarkOnBackground,
-    surface = DarkSurface,
-    onSurface = DarkOnSurface
+// ===== Light Color Scheme =====
+val ToyLightColorScheme = lightColorScheme(
+    primary = ToyYellow,
+    onPrimary = ToyBlack,
+    primaryContainer = ToyYellowContainerLight,
+    onPrimaryContainer = ToyBlack,
+
+    secondary = ToyRed,
+    onSecondary = ToyWhite,
+    secondaryContainer = ToyRedContainerLight,
+    onSecondaryContainer = ToyBlack,
+
+    // Optional: tertiary (we keep it close to brand so UI stays consistent)
+    tertiary = ToyYellow,
+    onTertiary = ToyBlack,
+    tertiaryContainer = ToyYellowContainerLight,
+    onTertiaryContainer = ToyBlack,
+
+    background = ToyBgLight,
+    onBackground = ToyBlack,
+
+    surface = ToySurfaceLight,
+    onSurface = ToyBlack,
+    surfaceVariant = ToySurfaceVarLight,
+    onSurfaceVariant = ToyBlack,
+
+    error = ToyError,
+    onError = ToyWhite,
+    errorContainer = ToyErrorContainerLight,
+    onErrorContainer = ToyBlack,
+
+    outline = ToyOutlineLight,
+    outlineVariant = ToyOutlineLight.copy(alpha = 0.55f),
+
+    inverseSurface = ToyInverseSurfaceLight,
+    inverseOnSurface = ToyInverseOnSurfaceLight,
+    inversePrimary = ToyYellow,
+
+    surfaceTint = ToyYellow,
+    scrim = Color(0x99000000)
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = LightPrimary,
-    onPrimary = LightOnPrimary,
-    secondary = LightSecondary,
-    onSecondary = LightOnSecondary,
-    background = LightBackground,
-    onBackground = LightOnBackground,
-    surface = LightSurface,
-    onSurface = LightOnSurface
-)
+// ===== Dark Color Scheme =====
+val ToyDarkColorScheme = darkColorScheme(
+    primary = ToyYellowDark,
+    onPrimary = ToyBlack,
+    primaryContainer = ToyYellowContainerDark,
+    onPrimaryContainer = ToyWhite,
 
+    secondary = ToyRedDark,
+    onSecondary = ToyWhite,
+    secondaryContainer = ToyRedContainerDark,
+    onSecondaryContainer = ToyWhite,
+
+    tertiary = ToyYellowDark,
+    onTertiary = ToyBlack,
+    tertiaryContainer = ToyYellowContainerDark,
+    onTertiaryContainer = ToyWhite,
+
+    background = ToyBgDark,
+    onBackground = ToyWhite,
+
+    surface = ToySurfaceDark,
+    onSurface = ToyWhite,
+    surfaceVariant = ToySurfaceVarDark,
+    onSurfaceVariant = ToyWhite.copy(alpha = 0.90f),
+
+    error = ToyError,
+    onError = ToyWhite,
+    errorContainer = ToyErrorContainerDark,
+    onErrorContainer = ToyWhite,
+
+    outline = ToyOutlineDark,
+    outlineVariant = ToyOutlineDark.copy(alpha = 0.60f),
+
+    inverseSurface = ToyInverseSurfaceDark,
+    inverseOnSurface = ToyInverseOnSurfaceDark,
+    inversePrimary = ToyYellowDark,
+
+    surfaceTint = ToyYellowDark,
+    scrim = Color(0xCC000000)
+)
 @Composable
 fun GgomodoroTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -49,8 +110,8 @@ fun GgomodoroTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> ToyDarkColorScheme
+        else -> ToyLightColorScheme
     }
     val view = LocalView.current
     if (!view.isInEditMode) {

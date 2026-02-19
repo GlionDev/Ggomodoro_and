@@ -2,10 +2,10 @@ package com.ggomodoro.core.notification
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -61,11 +61,12 @@ class NotificationHelper @Inject constructor(
      */
     fun getOngoingTimerNotificationBuilder(): NotificationCompat.Builder {
         val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
-        val pendingIntent = android.app.PendingIntent.getActivity(
+        
+        val pendingIntent = PendingIntent.getActivity(
             context,
             0,
             launchIntent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         return NotificationCompat.Builder(context, TIMER_CHANNEL_ID)
