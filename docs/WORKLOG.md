@@ -8,6 +8,8 @@
         - 꼬꼬(닭) 의 색상과 맞춘 color theme 적용
         - **Timer UI**: 두꺼운(50dp) 트랙, 둥근 캡(Round Cap), 큰 원형 손잡이(Knob) 추가.
         - **Controls**: 텍스트 버튼을 둥근(RoundedCornerShape 50) '청키'한 스타일로 변경.
+    - **[Fix] History Swipe Reset Bug**
+        - 아이템 삭제 취소 시 스와이프 상태가 초기화되지 않는 문제 해결 (`confirmValueChange`에서 `false` 반환하여 상태 고착 방지).
     - **[Refactor] Dependency Management**:
         - `:core:designsystem` 모듈의 Compose UI 라이브러리(`ui`, `material3` 등) 의존성을 `api`로 변경하여 피쳐 모듈에 일관되게 노출.
         - `:feature:timer` 모듈의 불필요한 명시적 `foundation` 의존성 제거.

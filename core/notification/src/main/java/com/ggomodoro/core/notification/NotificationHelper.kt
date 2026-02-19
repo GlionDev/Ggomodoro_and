@@ -70,7 +70,7 @@ class NotificationHelper @Inject constructor(
         )
 
         return NotificationCompat.Builder(context, TIMER_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info) // Placeholder
+            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm) // Placeholder
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -83,9 +83,19 @@ class NotificationHelper @Inject constructor(
      * @return [NotificationCompat.Builder] 객체
      */
     fun getCompletionNotificationBuilder(): NotificationCompat.Builder {
+        val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            0,
+            launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         return NotificationCompat.Builder(context, COMPLETION_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm) // Placeholder
+            .setSmallIcon(android.R.drawable.ic_dialog_info) // Placeholder
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
     }
 }

@@ -90,7 +90,7 @@ fun HistoryScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "No history yet.",
+                text = "아직 기록이 없습니다.",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -110,7 +110,7 @@ fun HistoryScreen(
                     confirmValueChange = {
                         if (it == SwipeToDismissBoxValue.StartToEnd) {
                             sessionToDelete = session
-                            true
+                            false // Don't dismiss immediately, just show dialog
                         } else {
                             false
                         }

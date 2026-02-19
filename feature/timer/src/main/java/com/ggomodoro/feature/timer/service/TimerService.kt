@@ -114,7 +114,7 @@ class TimerService : Service() {
      */
     private fun startForegroundService() {
         val notification = notificationHelper.getOngoingTimerNotificationBuilder()
-            .setContentTitle("Ggomodoro Timer")
+            .setContentTitle("꼬모도로 타이머 동작중")
             .setContentText("Timer starting...")
             .build()
         
@@ -136,7 +136,7 @@ class TimerService : Service() {
         val progress = totalSeconds - remainingSeconds
 
         val notification = notificationHelper.getOngoingTimerNotificationBuilder()
-            .setContentTitle("Ggomodoro Timer")
+            .setContentTitle("꼬모도로 타이머 동작중")
             .setProgress(totalSeconds, progress, false)
             .build()
 
@@ -190,8 +190,8 @@ class TimerService : Service() {
 
         // Show completion notification
         val notification = notificationHelper.getCompletionNotificationBuilder()
-            .setContentTitle("Timer Finished!")
-            .setContentText("Your $durationMinutes minute session is complete.")
+            .setContentTitle("꼬모도로 타이머 종료")
+            .setContentText("$durationMinutes 분 꼬모도로 타이머가 종료되었어요.")
             .build()
         
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
