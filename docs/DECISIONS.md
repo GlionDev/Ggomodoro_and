@@ -15,3 +15,7 @@
 ## 4. Java 1.8 Compatibility
 - **Decision**: Java 1.8 (`JavaVersion.VERSION_1_8`) 타겟팅.
 - **Reason**: 레거시 디바이스 지원 및 안정성 확보를 위한 프로젝트 규칙 준수.
+
+## 5. DataSource Layer 추가
+- **Decision**: Repository와 Dao 사이에 LocalDataSource 계층 추가.
+- **Reason**: Repository가 로컬 데이터베이스 기술(Room, Dao 등)에 직접 의존하지 않고 인터페이스를 통해 통신하도록 하여, 추후 데이터 원천이 변경되더라도 Repository의 변경을 최소화하기 위함.

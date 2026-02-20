@@ -1,5 +1,12 @@
 # Work Log
 
+## 2026-02-20
+- **[Refactor] Repository 데이터 소스 의존성 분리**
+    - `core:database`에 직접 의존하던 `HistoryRepositoryImpl`을 분리하기 위해 `Data` 모듈에 `LocalDataSource` 인터페이스 추가.
+    - `LocalDataSourceImpl` 구현체(Room DAO 주입) 생성 (`/data/datasource/local/`).
+    - `HistoryRepositoryImpl`에서 `TimerSessionDao` 대신 `LocalDataSource`를 주입받아 사용하도록 리팩토링.
+    - `DataModule.kt`에 `LocalDataSource` Hilt 의존성 주입(`@Binds`) 추가.
+
 ## 2026-02-19
 - **[Feature] 타이머 진동 효과 구현 및 디자인 변경, 코드 정리**
     - 타이머 다이얼 조정 시 분 단위 변경마다 진동 피드백(`VibrationEffect.EFFECT_TICK`) 추가.
